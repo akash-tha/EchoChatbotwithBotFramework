@@ -1,138 +1,61 @@
-# A Microsoft Bot Framework & IBM Watson Bot sample
+# demo-bot
 
-A sample bot using Microsoft Bot framework as communication channel support and IBM Watson Conversation
+Demonstrate the core capabilities of the Microsoft Bot Framework
 
-[![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/vperrinfr/Cortana-Watson)
-
-## Introduction
-
-The Microsoft Bot Framework provides just what you need to build and connect intelligent bots that interact naturally wherever your users are talking, from text/sms to Skype, Slack, Office 365 mail and other popular services. [More details](https://dev.botframework.com/)
-
-IBM Watson Conversation service help you to quickly build and deploy chatbots and virtual agents across a variety of channels, including mobile devices, messaging platforms, and even robots. [More details](https://www.ibm.com/watson/services/conversation/)
-
-Why using Microsoft Bot Framework & IBM Watson : **Openess**
-- Watson Conversation is channel-agnostic. IBM provided native integration with Slack and integration with [BotKit](https://www.botkit.ai/).
-- Microsoft Bot Framework opens Watson to the Microsoft world via its integration with Skype, Bing, Cortana, Office365 Mail, Microsoft Teams...https://docs.microsoft.com/en-us/bot-framework/portal-configure-channels
+This bot has been created using [Bot Framework](https://dev.botframework.com), it shows how to create a simple bot that accepts input from the user and echoes it back.
 
 ## Prerequisites
 
-The minimum prerequisites to run this sample are:
-* Create a Bluemix account & a Watson Conversation Workspace
-    * In case, you don't have it : [Sign up](https://console.ng.bluemix.net/registration/?target=/catalog/%3fcategory=watson) in Bluemix, or use an existing account
-$ Acquire Watson Conversation credentials
+- [Node.js](https://nodejs.org) version 10.14.1 or higher
 
-   * The code needs you to provide the username, password, and workspace_id of your Watson Conversation chat bot. If you have an existing Conversation service instance, [follow these steps](https://github.com/watson-developer-cloud/conversation-simple/blob/master/README.md#configuring-the-application-environmnet) to get your credentials. If you do not have a Conversation service instance, [follow these steps](https://github.com/watson-developer-cloud/conversation-simple/blob/master/README.md#before-you-begin) to get started.
-    
-* Latest Node.js with NPM. Download it from [here](https://nodejs.org/en/download/).
-* The [Cloud Foundry][cloud_foundry] command-line client
+    ```bash
+    # determine node version
+    node --version
+    ```
 
-      Note: Ensure that you Cloud Foundry version is up to date
+## To run the bot
 
-  ```
-  Note: When pushing to cloud foundry you must explicitly specify what buildpack to use i.e. 
+- Install modules
 
-  cf push -b https://github.com/cloudfoundry/nodejs-buildpack
-  ```
+    ```bash
+    npm install
+    ```
 
-* The Bot Framework Emulator. To install the Bot Framework Emulator, download it from [here](https://emulator.botframework.com/). Please refer to [this documentation article](https://github.com/microsoft/botframework-emulator/wiki/Getting-Started) to know more about the Bot Framework Emulator.
-* Register your bot with the Microsoft Bot Framework. Please refer to [this](https://docs.microsoft.com/en-us/bot-framework/portal-register-bot) for the instructions. Once you complete the registration, update your bot configuration with the registered config values (See [Debugging locally using ngrok](https://docs.microsoft.com/en-us/bot-framework/debug-bots-emulator) or [Deploying to IBM Bluemix](https://console.bluemix.net/docs/runtimes/nodejs/getting-started.html#getting-started-with-node-js-on-bluemix))
+- Start the bot
 
-* Set up your Azure storage with the following steps.
-  * Create an Azure account if you dod not already have one. This should be the account that you used for creating your bot
-  * Create a CosmoDB database inside that account named _botdocs_  
-  ![screenshot_new_db](readme_images/screenshot_new_db.png) 
-  * Inside that database, create a collection named _botdata_ make sure that the partition key is _id_
-  ![screenshot_add_container](readme_images/screenshot_add_container.png) 
-  * Make a note of the _PRIMARY KEY_ associated with your account. This must be stored in the environment file as _storageKey_
-  * Take note of the URI associated with your bot account, It will be something like :
-https://<bot_name>.documents.azure.com:443/ - this will be the _storageURL_ you will save in your environment file below.
+    ```bash
+    npm start
+    ```
 
-## Instructions
+## Testing the bot using Bot Framework Emulator
 
-* Copy or rename the .env_example file to .env (nothing before the dot) and add your Watson conversations details and Microsoft Bot app keys.
+[Bot Framework Emulator](https://github.com/microsoft/botframework-emulator) is a desktop application that allows bot developers to test and debug their bots on localhost or running remotely through a tunnel.
 
-```
-# Environment variables
-WORKSPACE_ID=
-CONVERSATION_USERNAME=
-CONVERSATION_PASSWORD=
-#Microsoft Bot Info
-appId=
-appPassword=
-storageKey=
-storageURL=
-```
+- Install the Bot Framework Emulator version 4.3.0 or greater from [here](https://github.com/Microsoft/BotFramework-Emulator/releases)
 
-* Before deploying that code, I recommend you fork it to test it locally with BotFramework emulator. [more details](https://docs.microsoft.com/en-us/bot-framework/debug-bots-emulator)
+### Connect to the bot using Bot Framework Emulator
 
-![botframework](readme_images/framework.png)
+- Launch Bot Framework Emulator
+- File -> Open Bot
+- Enter a Bot URL of `http://localhost:3978/api/messages`
 
-## Code Explanation
+## Deploy the bot to Azure
 
-Watson Conversation Node.js code :
-I retrieve the Bot session message, pass that message to Watson Conversation, retrieve the response and send back the response to Bot session.
+To learn more about deploying a bot to Azure, see [Deploy your bot to Azure](https://aka.ms/azuredeployment) for a complete list of deployment instructions.
 
-```Javascript
-var bot = new builder.UniversalBot(connector, function (session) {
 
-    var payload = {
-        workspace_id: workspace,
-        context:'',
-        input: { text: session.message.text}
-    };
+## Further reading
 
-   // I use the Bot Conversation Id as identifier.
-    var conversationContext = findOrCreateContext(session.message.address.conversation.id);	
-    if (!conversationContext) conversationContext = {};
-    payload.context = conversationContext.watsonContext;
-
-    conversation.message(payload, function(err, response) {
-     if (err) {
-       session.send(err);
-     } else {
-       console.log(JSON.stringify(response, null, 2));
-       session.send(response.output.text);
-       conversationContext.watsonContext = response.context;
-     }
-    });
-
-});
-```
-
-I have a specific function to handle the conversation context.
-```Javascript
-function findOrCreateContext (convId){
-      // Let's see if we already have a session for the user convId
-    if (!contexts)
-        contexts = [];
-        
-    if (!contexts[convId]) {
-        // No session found for user convId, let's create a new one
-        //with Michelin concervsation workspace by default
-        contexts[convId] = {workspaceId: workspace, watsonContext: {}};
-        //console.log ("new session : " + convId);
-    }
-return contexts[convId];
-}
-```
-
-## Results
-
-Channels supported by Bot Framework
-![Channels](readme_images/channels.png)
-
-My bot tested with Bot Framework test client
-![Test Client in Bot Framework](readme_images/test.png)
-
-My conversation with Watson via Microsoft Skype
-![Skype](readme_images/skype.png)
-
-## More Information
-
-To get more information about how to get started, please review the following resources:
-* [IBM Bluemix](https://www.ibm.com/cloud-computing/bluemix/)
-* [Watson Developer Cloud](https://www.ibm.com/watson/developer/)
-* [Watson Conversation](https://www.ibm.com/watson/services/conversation/)
-* [Microsoft Bot Builder for Node.js Reference](https://docs.microsoft.com/en-us/bot-framework/nodejs/)
-* [Bot Framework FAQ](https://docs.microsoft.com/en-us/bot-framework/resources-bot-framework-faq#i-have-a-communication-channel-id-like-to-be-configurable-with-bot-framework-can-i-work-with-microsoft-to-do-that)
-
+- [Bot Framework Documentation](https://docs.botframework.com)
+- [Bot Basics](https://docs.microsoft.com/azure/bot-service/bot-builder-basics?view=azure-bot-service-4.0)
+- [Dialogs](https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-concept-dialog?view=azure-bot-service-4.0)
+- [Gathering Input Using Prompts](https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-prompts?view=azure-bot-service-4.0)
+- [Activity processing](https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-concept-activity-processing?view=azure-bot-service-4.0)
+- [Azure Bot Service Introduction](https://docs.microsoft.com/azure/bot-service/bot-service-overview-introduction?view=azure-bot-service-4.0)
+- [Azure Bot Service Documentation](https://docs.microsoft.com/azure/bot-service/?view=azure-bot-service-4.0)
+- [Azure CLI](https://docs.microsoft.com/cli/azure/?view=azure-cli-latest)
+- [Azure Portal](https://portal.azure.com)
+- [Language Understanding using LUIS](https://docs.microsoft.com/en-us/azure/cognitive-services/luis/)
+- [Channels and Bot Connector Service](https://docs.microsoft.com/en-us/azure/bot-service/bot-concepts?view=azure-bot-service-4.0)
+- [Restify](https://www.npmjs.com/package/restify)
+- [dotenv](https://www.npmjs.com/package/dotenv)
