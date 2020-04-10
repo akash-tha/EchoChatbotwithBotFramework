@@ -1,0 +1,9 @@
+applications:
+- path: .
+  memory: 256M
+  instances: 1
+  domain: eu-gb.mybluemix.net
+  name: my-app_bot_akash_watson
+  host: my-bot_with_watson_akash
+  disk_quota: 1024M
+  buildpack: sdk-for-nodejs
